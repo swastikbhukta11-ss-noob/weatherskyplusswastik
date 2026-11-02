@@ -1,0 +1,10 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependencies & Environment
+node_modules/
+__pycache__/
+*.pyc
+.env

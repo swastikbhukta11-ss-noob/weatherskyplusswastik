@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkyPulse - Modern Weather Forecast</title>
+  
+  <!-- Google Fonts: Inter & Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons for weather details & UI elements -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-default">
+  <!-- Dynamic Weather Background Image Backdrop & Atmospheric Overlay -->
+  <div id="bg-weather-backdrop" class="weather-backdrop" aria-hidden="true"></div>
+  <div class="weather-overlay" aria-hidden="true"></div>
+
+  <div class="app-container">
+    
+    <!-- Top Header: Branding, Search Bar, Location & Controls -->
+    <header class="app-header">
+      <div class="brand">
+        <i class="fa-solid fa-cloud-sun-rain brand-icon"></i>
+        <h1>SkyPulse</h1>
+      </div>
+
+      <!-- Search and Location Controls -->
+      <div class="search-box-wrapper">
+        <form id="search-form" class="search-form">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="Search city (e.g., Tokyo, London, Paris)..." 
+            autocomplete="off"
+            required
+          >
+          <button type="submit" class="btn-search" title="Search weather">
+            <span>Search</span>
+          </button>
+        </form>
+        
+        <button id="location-btn" class="btn-icon" title="Use current location">
+          <i class="fa-solid fa-location-crosshairs"></i>
+          <span class="btn-label">Current Location</span>
+        </button>
+      </div>
+
+      <!-- Settings, Theme & Unit Conversion -->
+      <div class="controls-wrapper">
+        <!-- Celsius / Fahrenheit Unit Switcher -->
+        <div class="unit-toggle" title="Toggle temperature unit">
+          <button id="unit-c" class="unit-btn active">°C</button>
+          <button id="unit-f" class="unit-btn">°F</button>
+        </div>
+
+        <!-- API Settings Button -->
+        <button id="api-settings-btn" class="btn-icon settings-btn" title="Weather API Settings">
+          <i class="fa-solid fa-gear"></i>
+          <span id="api-status-badge" class="badge-dot badge-demo" title="Demo Mode"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Notification / Error Banner -->
+    <div id="status-banner" class="status-banner hidden">
+      <i id="status-icon" class="fa-solid fa-circle-exclamation"></i>
+      <span id="status-message">Sample error or information message.</span>
+      <button id="close-banner-btn" class="close-banner" aria-label="Close notification">&times;</button>
+    </div>
+
+    <!-- Quick City Suggestions / Popular Cities -->
+    <div class="quick-cities">
+      <span class="quick-title"><i class="fa-solid fa-fire-flame-curved"></i> Popular:</span>
+      <div class="quick-city-tags">
+        <button class="city-chip" data-city="New York">New York</button>
+        <button class="city-chip" data-city="London">London</button>
+        <button class="city-chip" data-city="Tokyo">Tokyo</button>
+        <button class="city-chip" data-city="Paris">Paris</button>
+        <button class="city-chip" data-city="Sydney">Sydney</button>
+        <button class="city-chip" data-city="Mumbai">Mumbai</button>
+      </div>
+    </div>
+
+    <!-- Main Weather Dashboard (Middle Part) -->
+    <main id="weather-dashboard" class="weather-dashboard">
+      
+      <!-- Flowing Wind Atmospheric Overlay (Middle Part Only) -->
+      <div id="wind-flow-overlay" class="wind-flow-overlay hidden">
+        <canvas id="wind-flow-canvas" class="wind-flow-canvas"></canvas>
+        <div class="wind-flow-hud">
+          <div class="wind-flow-core">
+            <i class="fa-solid fa-wind wind-pulse-icon"></i>
+          </div>
+          <p id="wind-scan-title" class="wind-scan-title">Measuring Atmospheric Wind Currents...</p>
+          <span id="wind-scan-target" class="wind-scan-target">SENSING GUSTS</span>
+        </div>
+      </div>
+
+      <!-- Top Row: Current Weather Overview & Highlights -->
+      <div class="current-weather-section">
+        
+        <!-- Primary Current Weather Card -->
+        <div class="card current-card">
+          <div class="current-header">
+            <div>
+              <h2 id="city-name" class="city-name">--</h2>
+              <p id="current-date" class="current-date">--</p>
+            </div>
+            <div id="weather-badge" class="weather-badge">
+              <span id="weather-condition-text">Clear Sky</span>
+            </div>
+          </div>
+
+          <div class="current-main">
+            <div class="temp-display-group">
+              <img id="current-weather-icon" src="https://openweathermap.org/img/wn/01d@4x.png" alt="Weather icon" class="weather-icon-lg">
+              <div class="temp-wrapper">
+                <span id="current-temp" class="current-temp">--</span>
+                <span class="temp-unit-symbol">°C</span>
+              </div>
+            </div>
+            
+            <div class="temp-meta">
+              <p class="feels-like">Feels like: <strong id="feels-like-temp">--°</strong></p>
+              <div class="high-low-temp">
+                <span><i class="fa-solid fa-arrow-up"></i> <span id="temp-max">--°</span></span>
+                <span><i class="fa-solid fa-arrow-down"></i> <span id="temp-min">--°</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather Metrics Highlights Grid -->
+        <div class="card metrics-card">
+          <h3 class="card-title"><i class="fa-solid fa-chart-simple"></i> Weather Highlights</h3>
+          <div class="metrics-grid">
+            
+            <!-- Humidity -->
+            <div class="metric-item">
+              <div class="metric-icon-box humidity-color">
+                <i class="fa-solid fa-droplet"></i>
+              </div>
+              <div class="metric-details">
+                <span class="metric-label">Humidity</span>
+                <span id="humidity-value" class="metric-value">--%</span>
+                <span id="humidity-level" class="metric-sub">Normal</span>
+              </div>
+            </div>
+
+            <!-- Wind Speed & Direction -->
+            <div class="metric-item">
+              <div class="metric-icon-box wind-color">
+                <i class="fa-solid fa-wind"></i>
+              </div>
+              <div class="metric-details">
+                <span class="metric-label">Wind Speed</span>
+                <span id="wind-value" class="metric-value">-- km/h</span>
+                <span id="wind-direction" class="metric-sub">Direction: --</span>
+              </div>
+            </div>
+
+            <!-- Air Pressure -->
+            <div class="metric-item">
+              <div class="metric-icon-box pressure-color">
+                <i class="fa-solid fa-gauge-high"></i>
+              </div>
+              <div class="metric-details">
+                <span class="metric-label">Pressure</span>
+                <span id="pressure-value" class="metric-value">-- hPa</span>
+                <span class="metric-sub">Atmospheric</span>
+              </div>
+            </div>
+
+            <!-- Visibility -->
+            <div class="metric-item">
+              <div class="metric-icon-box visibility-color">
+                <i class="fa-solid fa-eye"></i>
+              </div>
+              <div class="metric-details">
+                <span class="metric-label">Visibility</span>
+                <span id="visibility-value" class="metric-value">-- km</span>
+                <span id="visibility-desc" class="metric-sub">Good</span>
+              </div>
+            </div>
+
+            <!-- Sunrise -->
+            <div class="metric-item">
+              <div class="metric-icon-box sunrise-color">
+                <i class="fa-solid fa-sun"></i>
+              </div>
+              <div class="metric-details">
+                <span class="metric-label">Sunrise</span>
+                <span id="sunrise-time" class="metric-value">--:--</span>
+                <span class="metric-sub">Local Time</span>
+              </div>
+            </div>
+
+            <!-- Sunset -->
+            <div class="metric-item">
+              <div class="metric-icon-box sunset-color">
+                <i class="fa-solid fa-moon"></i>
+              </div>
+              <div class="metric-details">
+                <span class="metric-label">Sunset</span>
+                <span id="sunset-time" class="metric-value">--:--</span>
+                <span class="metric-sub">Local Time</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Section: Today's 24-Hour Forecast Timeline -->
+      <section class="card timeline-section">
+        <div class="section-header">
+          <h3 class="card-title"><i class="fa-regular fa-clock"></i> Next 24-Hour Forecast</h3>
+          <span class="header-note">3-Hour Intervals</span>
+        </div>
+        <div id="hourly-forecast-container" class="hourly-forecast-container">
+          <!-- Filled dynamically via JavaScript -->
+        </div>
+      </section>
+
+      <!-- Bottom Section: 5-Day Weather Forecast -->
+      <section class="card forecast-section">
+        <div class="section-header">
+          <h3 class="card-title"><i class="fa-solid fa-calendar-days"></i> 5-Day Extended Forecast</h3>
+          <span class="header-note">Daily Overview</span>
+        </div>
+        <div id="forecast-container" class="forecast-container">
+          <!-- 5 Forecast Cards injected dynamically -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- API Provider & Settings Modal -->
+    <div id="api-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-cloud-bolt"></i> Weather API Configuration</h3>
+          <button id="close-modal-btn" class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Choose your weather API source. By default, <strong>SkyPulse Live Weather API</strong> delivers real-time worldwide weather and 5-day forecasts with zero configuration or API keys needed.
+          </p>
+
+          <div class="form-group">
+            <label for="api-provider-select">Weather API Provider</label>
+            <select id="api-provider-select" class="provider-select">
+              <option value="builtin" selected>🌟 SkyPulse Live Weather API (Free, Instant, No Key Required)</option>
+              <option value="local">💻 Local Weather API Server (http://localhost:3000/api)</option>
+              <option value="openweather">🔑 OpenWeatherMap API (Use Your Own API Key)</option>
+            </select>
+          </div>
+
+          <!-- OpenWeather Key Input Group (shown when OpenWeather is chosen) -->
+          <div id="openweather-group" class="form-group hidden">
+            <label for="api-key-input">OpenWeatherMap 32-Char API Key</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-lock"></i>
+              <input 
+                type="text" 
+                id="api-key-input" 
+                placeholder="Paste your 32-character API key here..."
+                autocomplete="off"
+              >
+            </div>
+            <div class="modal-tips" style="margin-top: 10px;">
+              <p><i class="fa-solid fa-circle-info"></i> Obtain a free key from <a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer">openweathermap.org/api</a>.</p>
+            </div>
+          </div>
+
+          <!-- Local Server URL Input Group (shown when Local Server is chosen) -->
+          <div id="local-server-group" class="form-group hidden">
+            <label for="local-server-input">Local API Server Base URL</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-server"></i>
+              <input 
+                type="text" 
+                id="local-server-input" 
+                placeholder="http://localhost:3000/api"
+                value="http://localhost:3000/api"
+                autocomplete="off"
+              >
+            </div>
+            <div class="modal-tips" style="margin-top: 10px;">
+              <p><i class="fa-solid fa-terminal"></i> Run <code>node server.js</code> or <code>python server.py</code> to start your local backend server.</p>
+            </div>
+          </div>
+
+          <div class="modal-tips">
+            <p><i class="fa-solid fa-circle-check"></i> Live real-time temperatures, wind speeds, humidity, and forecasts update dynamically.</p>
+            <p><i class="fa-solid fa-shield-halved"></i> Your configurations are saved in your browser's <code>localStorage</code>.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="reset-api-btn" class="btn-secondary">Reset to Default API</button>
+          <button id="save-api-key-btn" class="btn-primary">Apply & Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Footer -->
+    <footer class="app-footer">
+      <p>Real-Time Global Weather &bull; Built with HTML, CSS, JavaScript & Weather API</p>
+    </footer>
+
+  </div>
+
+  <!-- Dedicated Weather API Service -->
+  <script src="weather-api.js"></script>
+  <!-- Flowing Wind Atmospheric Animation Engine -->
+  <script src="wind-flow.js"></script>
+  <!-- Main Application JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
